@@ -95,7 +95,9 @@ fn latency_changes_outcome() {
         latency_us: 0,
         ..cfg()
     });
-    assert_ne!(slow, fast);
+    // `Summary` includes `latency_ns`, so compare trading behaviour only.
+    let behaviour = |s: &app::Summary| (s.orders_sent, s.fills, s.volume, s.gross, s.total);
+    assert_ne!(behaviour(&slow), behaviour(&fast));
 }
 
 #[test]
