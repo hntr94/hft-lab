@@ -6,8 +6,10 @@ check:
 test:
 	cargo test --workspace
 
+ARGS ?=
+
 run:
-	cargo run --release -p app --
+	cargo run --release -p app -- $(ARGS)
 
 exercise-book:
 	cargo test -p book --test mine -- --include-ignored

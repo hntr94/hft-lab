@@ -117,7 +117,7 @@ Work through them in order. When all nine pass, you are done. The normal `make c
 cargo run --release -p app -- --strategy mine
 ```
 
-(The `--strategy` flag arrives with the CLI work in a later task. Leave it off to use the stand-in.)
+(Leave the flag off to use the stand-in. `make run ARGS="--strategy mine"` does the same thing. The other two components keep their stand-ins.)
 
 ## 9. Reading
 

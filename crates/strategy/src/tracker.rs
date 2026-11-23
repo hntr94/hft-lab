@@ -143,6 +143,8 @@ impl OrderTracker {
     /// Remove the bot's own quotes from a book snapshot.
     ///
     /// This is how the bot avoids anchoring its mid on its own quotes.
+    /// An order with a cancel in flight still rests on the exchange, so it is
+    /// removed too; otherwise the bot would chase its own stale quote.
     pub fn exclude_own(&self, snap: &BookSnapshot) -> BookSnapshot {
         let strip = |levels: &[Level], side: Side| -> Vec<Level> {
             levels
@@ -151,9 +153,7 @@ impl OrderTracker {
                     let own: i64 = self
                         .orders
                         .values()
-                        .filter(|o| {
-                            o.acked && !o.cancel_pending && o.side == side && o.price == level.price
-                        })
+                        .filter(|o| o.acked && o.side == side && o.price == level.price)
                         .map(|o| o.leaves.0)
                         .sum();
                     let qty = Qty(level.qty.0 - own);
@@ -312,9 +312,10 @@ mod tests {
         let out = t.exclude_own(&snap);
         assert_eq!(out.bids, vec![lv(100, 3), lv(99, 2)]);
         assert_eq!(out.asks, snap.asks);
-        // Cancel-pending: not subtracted.
+        // Cancel-pending: still resting on the exchange until the cancel
+        // arrives, so it is still subtracted.
         t.cancel(id);
-        assert_eq!(t.exclude_own(&snap), snap);
+        assert_eq!(t.exclude_own(&snap).bids, vec![lv(100, 3), lv(99, 2)]);
 
         let mut t = OrderTracker::new();
         let id = t.place(Side::Buy, Price(100), Qty(8)).order_id();
