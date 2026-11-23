@@ -145,6 +145,11 @@ impl OrderTracker {
     /// This is how the bot avoids anchoring its mid on its own quotes.
     /// An order with a cancel in flight still rests on the exchange, so it is
     /// removed too; otherwise the bot would chase its own stale quote.
+    ///
+    /// The subtraction is exact under the sim's fixed one-way latency, because
+    /// the execution reports for an order state always arrive before the book
+    /// snapshot that reflects it. Under variable latency a snapshot can be
+    /// older or newer than the tracker's view, so it is only approximate.
     pub fn exclude_own(&self, snap: &BookSnapshot) -> BookSnapshot {
         let strip = |levels: &[Level], side: Side| -> Vec<Level> {
             levels
@@ -321,6 +326,35 @@ mod tests {
         let id = t.place(Side::Buy, Price(100), Qty(8)).order_id();
         t.on_exec(&ExecEvent::Ack { id });
         assert_eq!(t.exclude_own(&snap).bids, vec![lv(99, 2)]);
+    }
+
+    #[test]
+    fn exclude_own_removes_own_ask() {
+        let mut t = OrderTracker::new();
+        let id = t.place(Side::Sell, Price(101), Qty(3)).order_id();
+        t.on_exec(&ExecEvent::Ack { id });
+        let snap = BookSnapshot {
+            bids: vec![lv(100, 8)],
+            asks: vec![lv(101, 4), lv(102, 2)],
+        };
+        // 4 - 3 = 1 left at 101; bids are untouched.
+        let out = t.exclude_own(&snap);
+        assert_eq!(out.asks, vec![lv(101, 1), lv(102, 2)]);
+        assert_eq!(out.bids, snap.bids);
+    }
+
+    #[test]
+    fn exclude_own_after_partial_fill_uses_leaves() {
+        let mut t = OrderTracker::new();
+        let id = t.place(Side::Buy, Price(100), Qty(5)).order_id();
+        t.on_exec(&ExecEvent::Ack { id });
+        t.on_exec(&fill(id, Side::Buy, 100, 2, 3));
+        let snap = BookSnapshot {
+            bids: vec![lv(100, 8)],
+            asks: vec![],
+        };
+        // Only the 3 still resting are ours: 8 - 3 = 5.
+        assert_eq!(t.exclude_own(&snap).bids, vec![lv(100, 5)]);
     }
 
     #[test]
