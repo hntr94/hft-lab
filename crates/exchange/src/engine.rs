@@ -3,6 +3,11 @@
 //! Orders match at the resting order's price; within a price level the oldest
 //! order goes first (FIFO). The engine knows nothing about time or latency: it
 //! takes one command and returns everything that happened.
+//!
+//! Self-trade prevention ("expire taker"): if an incoming order would match a
+//! resting order of the same trader, matching stops, the incoming order's
+//! remaining quantity is cancelled (never rested) and the resting order is
+//! left untouched.
 
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 
@@ -53,6 +58,11 @@ impl MatchingEngine {
     }
 
     /// Handle one command and report what happened.
+    ///
+    /// Self-trade prevention: when an incoming order would match a resting
+    /// order of the same trader, matching stops and the incoming order's
+    /// remaining quantity is reported `Cancelled` (after any fills already
+    /// produced). It is not rested and the resting order is untouched.
     pub fn submit(&mut self, cmd: &Command) -> MatchOutput {
         match cmd {
             Command::New(order) => self.new_order(order),
@@ -126,6 +136,7 @@ impl MatchingEngine {
             OrderType::Market => None,
         };
         let mut leaves = order.qty;
+        let mut self_trade = false;
         while leaves > Qty::ZERO {
             let Some(price) = self.best_opposite(order.side) else {
                 break;
@@ -138,12 +149,21 @@ impl MatchingEngine {
             if !crosses {
                 break;
             }
+            let front = self
+                .book_side(order.side.opposite())
+                .get(&price)
+                .and_then(|q| q.front())
+                .expect("best level is never empty");
+            if front.id.trader == id.trader {
+                self_trade = true;
+                break;
+            }
             leaves = self.match_at(order, price, leaves, &mut out);
         }
 
         if leaves > Qty::ZERO {
             match limit {
-                Some(price) => {
+                Some(price) if !self_trade => {
                     self.book_side(order.side)
                         .entry(price)
                         .or_default()
@@ -151,7 +171,7 @@ impl MatchingEngine {
                     self.index.insert(id, (order.side, price));
                     out.book_changed = true;
                 }
-                None => out
+                _ => out
                     .exec
                     .push((id.trader, ExecEvent::Cancelled { id, leaves })),
             }
@@ -451,6 +471,73 @@ mod tests {
         );
         assert_eq!(e.best_ask(), None);
         assert!(out.book_changed);
+    }
+
+    #[test]
+    fn self_trade_prevented_limit() {
+        let mut e = MatchingEngine::new(fees());
+        e.submit(&lim(T, 1, Side::Sell, 101, 5));
+        let out = e.submit(&lim(T, 2, Side::Buy, 102, 3));
+        assert_eq!(
+            out.exec,
+            vec![
+                (T, ExecEvent::Ack { id: oid(T, 2) }),
+                (
+                    T,
+                    ExecEvent::Cancelled {
+                        id: oid(T, 2),
+                        leaves: Qty(3)
+                    }
+                ),
+            ]
+        );
+        assert!(fills(&out).is_empty());
+        assert!(out.trades.is_empty());
+        assert_eq!(e.best_bid(), None);
+        assert_eq!(
+            e.snapshot(5).asks,
+            vec![Level {
+                price: Price(101),
+                qty: Qty(5)
+            }]
+        );
+        assert_eq!(e.resting_orders(T), vec![oid(T, 1)]);
+    }
+
+    #[test]
+    fn self_trade_after_partial_fill() {
+        let mut e = MatchingEngine::new(fees());
+        e.submit(&lim(M, 1, Side::Sell, 100, 2));
+        e.submit(&lim(T, 1, Side::Sell, 101, 5));
+        let out = e.submit(&mkt(T, 2, Side::Buy, 6));
+        // 2 fill against M at 100, then the next level is T's own: expire the
+        // remaining 6 - 2 = 4.
+        let f = fills(&out);
+        assert_eq!(f.len(), 2);
+        assert!(matches!(
+            f[0],
+            (
+                T,
+                ExecEvent::Fill {
+                    price: Price(100),
+                    qty: Qty(2),
+                    liquidity: Liquidity::Taker,
+                    ..
+                }
+            )
+        ));
+        assert_eq!(
+            out.exec.last().unwrap(),
+            &(
+                T,
+                ExecEvent::Cancelled {
+                    id: oid(T, 2),
+                    leaves: Qty(4)
+                }
+            )
+        );
+        assert_eq!(e.resting_orders(T), vec![oid(T, 1)]);
+        assert_eq!(e.best_ask(), Some(Price(101)));
     }
 
     #[test]

@@ -81,8 +81,8 @@ impl AppConfig {
         if self.quote_lots <= 0 {
             return Err("quote_lots must be > 0".to_string());
         }
-        if self.half_spread_ticks < 0 {
-            return Err("half_spread_ticks must be >= 0".to_string());
+        if self.half_spread_ticks < 1 {
+            return Err("half_spread_ticks must be >= 1".to_string());
         }
         if self.max_open_orders == 0 {
             return Err("max_open_orders must be > 0".to_string());

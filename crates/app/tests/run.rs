@@ -36,6 +36,13 @@ fn config_validation() {
         (
             "half_spread_ticks",
             AppConfig {
+                half_spread_ticks: 0,
+                ..cfg()
+            },
+        ),
+        (
+            "half_spread_ticks",
+            AppConfig {
                 half_spread_ticks: -1,
                 ..cfg()
             },
