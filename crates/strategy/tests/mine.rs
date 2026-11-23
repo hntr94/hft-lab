@@ -151,3 +151,39 @@ fn bid_clamped_below_best_ask() {
         vec![place(Side::Buy, 10_000), place(Side::Sell, 10_035)]
     );
 }
+
+#[test]
+#[ignore = "exercise: run `make exercise-strategy`"]
+fn ask_clamped_above_best_bid() {
+    // skew = 3 * 1_000 / 100 = 30, reservation = 10_000 - 30 = 9_970.
+    // bid = 9_970 - 5 = 9_965 (below the best ask 10_001, so unchanged).
+    // The raw ask 9_975 would cross the best bid 9_999, so it becomes 9_999 + 1 = 10_000.
+    let book = book_with(&[(9_999, 1)], &[(10_001, 1)]);
+    assert_eq!(
+        run(&book, 1_000, &[]),
+        vec![place(Side::Buy, 9_965), place(Side::Sell, 10_000)]
+    );
+}
+
+#[test]
+#[ignore = "exercise: run `make exercise-strategy`"]
+fn two_stale_bids_both_cancelled() {
+    // Flat position: the desired bid is 9_995 and the desired ask is 10_005.
+    // Both bids (9_990 and 9_980) are stale, so both are cancelled in
+    // open_orders order, then the new bid is placed. The ask is already right.
+    let stale_a = order(1, Side::Buy, 9_990, true, false);
+    let stale_b = order(2, Side::Buy, 9_980, true, false);
+    let good_ask = order(3, Side::Sell, 10_005, true, false);
+    assert_eq!(
+        run(
+            &standard_book(),
+            0,
+            &[stale_a.clone(), stale_b.clone(), good_ask]
+        ),
+        vec![
+            Action::Cancel(stale_a.id),
+            Action::Cancel(stale_b.id),
+            place(Side::Buy, 9_995)
+        ]
+    );
+}
