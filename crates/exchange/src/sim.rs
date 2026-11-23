@@ -143,8 +143,7 @@ impl Simulation {
                 let resting = self.engine.resting_orders(LIQUIDITY);
                 for cmd in self.market.refresh_liquidity(&resting) {
                     let o = self.engine.submit(&cmd);
-                    out.trades.extend(o.trades);
-                    out.book_changed |= o.book_changed;
+                    merge(&mut out, o);
                 }
                 let at = self
                     .now
@@ -185,4 +184,11 @@ impl Simulation {
             );
         }
     }
+}
+
+/// Folds `more` into `out`, keeping every field so nothing is dropped.
+fn merge(out: &mut MatchOutput, more: MatchOutput) {
+    out.exec.extend(more.exec);
+    out.trades.extend(more.trades);
+    out.book_changed |= more.book_changed;
 }

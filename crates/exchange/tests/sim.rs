@@ -160,3 +160,36 @@ fn synthetic_book_two_sided_after_start() {
     }
     assert!(sim.exchange_mid().is_some());
 }
+
+#[test]
+fn lp_refresh_crossing_bot_quote_delivers_bot_fill() {
+    // Takers effectively off, so only an LP refresh can fill the bot.
+    let cfg = SimConfig {
+        duration_ns: 600_000_000_000,
+        synthetic: SyntheticConfig {
+            taker_rate_per_sec: 1e-9,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let mut sim = Simulation::new(cfg);
+    // Learn the best ask, then rest a bid one tick under it.
+    let ask = loop {
+        let (_, ev) = sim.next_bot_event().unwrap();
+        if let BotEvent::Market(MarketData::Snapshot(s)) = ev {
+            break s.asks[0].price;
+        }
+    };
+    sim.send(bot_limit(1, Side::Buy, ask.0 - 1, 1_000));
+    let mut fill = false;
+    while let Some((_, ev)) = sim.next_bot_event() {
+        if matches!(ev, BotEvent::Exec(ExecEvent::Fill { .. })) {
+            fill = true;
+            break;
+        }
+    }
+    assert!(
+        fill,
+        "bot never saw a Fill from an LP refresh crossing its bid"
+    );
+}
