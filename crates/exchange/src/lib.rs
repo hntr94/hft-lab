@@ -2,6 +2,8 @@
 
 pub mod engine;
 pub mod scheduler;
+pub mod synthetic;
 
 pub use engine::{MatchOutput, MatchingEngine};
 pub use scheduler::Scheduler;
+pub use synthetic::{SyntheticConfig, SyntheticMarket};
