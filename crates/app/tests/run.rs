@@ -174,8 +174,8 @@ fn loss_limit_halts_bot() {
 fn summary_display_lines() {
     let text = format!("{}", run(&cfg()));
     assert!(text.contains("venue:            sim (in-process) · BTC/USDT"));
-    assert!(text.contains("latency:          1.000 ms each way"));
-    assert!(text.contains("fees:             maker 0.020% / taker 0.050%"));
+    assert!(text.contains("latency:          1.000000 ms each way"));
+    assert!(text.contains("fees:             maker 0.0200% / taker 0.0500%"));
     assert!(text.contains("gross PnL:"));
     assert!(text.contains("fees paid:"));
     assert!(text.contains("total PnL:"));

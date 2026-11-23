@@ -11,7 +11,7 @@ use strategy::{
 };
 use types::{
     BotEvent, CASH_UNITS_PER_USDT, Cash, ExecEvent, FeeSchedule, MarketData, Qty, Side, fmt_cash,
-    fmt_qty,
+    fmt_ns_as_ms, fmt_ppm_pct, fmt_qty,
 };
 use venue::{SimVenue, Venue};
 
@@ -168,14 +168,14 @@ impl fmt::Display for Summary {
         writeln!(f, "  simulated time:   {}", fmt_duration(self.sim_time_ns))?;
         writeln!(
             f,
-            "  latency:          {:.3} ms each way",
-            self.latency_ns as f64 / 1e6
+            "  latency:          {} ms each way",
+            fmt_ns_as_ms(self.latency_ns)
         )?;
         writeln!(
             f,
-            "  fees:             maker {:.3}% / taker {:.3}%",
-            self.maker_fee_ppm as f64 / 10_000.0,
-            self.taker_fee_ppm as f64 / 10_000.0
+            "  fees:             maker {}% / taker {}%",
+            fmt_ppm_pct(self.maker_fee_ppm),
+            fmt_ppm_pct(self.taker_fee_ppm)
         )?;
         writeln!(
             f,

@@ -130,18 +130,18 @@ hft-lab run summary
   venue:            sim (in-process) · BTC/USDT
   seed:             42
   simulated time:   1h 00m
-  latency:          1.000 ms each way
-  fees:             maker 0.020% / taker 0.050%
+  latency:          1.000000 ms each way
+  fees:             maker 0.0200% / taker 0.0500%
   orders sent:      66,976   (rejected by risk: 16,327)
   fills:            17,360   (buy 8,704 / sell 8,656 · maker 17,360 / taker 0)
   volume:           12.92163 BTC
   final inventory:  +0.00945 BTC
-  gross PnL:        +316.79 USDT (before fees)
-  fees paid:        -258.32 USDT
-  realized PnL:     +58.33 USDT (after fees)
-  unrealized PnL:   +0.13 USDT (marked at final mid)
-  total PnL:        +58.47 USDT
-  max drawdown:     -0.33 USDT
+  gross PnL:        +316.7931692 USDT (before fees)
+  fees paid:        -258.3217970 USDT
+  realized PnL:     +58.3313891 USDT (after fees)
+  unrealized PnL:   +0.1399831 USDT (marked at final mid)
+  total PnL:        +58.4713722 USDT
+  max drawdown:     -0.3395663 USDT
   halted:           no
 ```
 

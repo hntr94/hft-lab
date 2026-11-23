@@ -167,7 +167,12 @@ pub fn fee(notional: Cash, ppm: i64) -> Cash {
     Cash(notional.0 * ppm / 1_000_000)
 }
 
-/// Format `negative`, `whole` and a fractional part as `[-]whole.frac`.
+/// Format an exact fixed-point number as `[-]whole.frac`.
+///
+/// `abs` is the magnitude counted in the smallest unit, `per_whole` is how many
+/// of those units make one whole, and `frac_digits` is the number of decimals
+/// (`per_whole == 10^frac_digits`). Only integer math is used, so nothing is
+/// rounded: every display helper below shows the value exactly.
 fn decimal(negative: bool, abs: u64, per_whole: u64, frac_digits: usize) -> String {
     let sign = if negative { "-" } else { "" };
     format!(
@@ -188,15 +193,29 @@ pub fn fmt_qty(qty: Qty) -> String {
     decimal(qty.0 < 0, qty.0.unsigned_abs(), 100_000, 5)
 }
 
-/// Cash as USDT with 2 decimals and an explicit sign, e.g. `"+12.34"`.
+/// Cash as USDT with all 7 decimals and an explicit sign, e.g. `"+12.3400000"`.
 ///
-/// Amounts smaller than one cent are truncated toward zero (the same rule as
-/// [`fee`]), so `Cash(-4)` prints as `"+0.00"`: zero is always shown with `+`,
-/// never as `-0.00`.
+/// One `Cash` unit is 0.0000001 USDT, so 7 decimals show the value exactly:
+/// nothing is rounded or truncated, and a fee of 0.0043210 USDT is visible.
+/// Zero prints as `"+0.0000000"`.
 pub fn fmt_cash(cash: Cash) -> String {
-    let cents = cash.0.unsigned_abs() / (CASH_UNITS_PER_USDT as u64 / 100);
-    let sign = if cash.0 < 0 && cents > 0 { "-" } else { "+" };
-    format!("{sign}{}.{:02}", cents / 100, cents % 100)
+    let body = decimal(false, cash.0.unsigned_abs(), CASH_UNITS_PER_USDT as u64, 7);
+    let sign = if cash.0 < 0 { "-" } else { "+" };
+    format!("{sign}{body}")
+}
+
+/// A rate in parts per million shown as an exact percentage with 4 decimals,
+/// e.g. `200` ppm is `"0.0200"` (meaning 0.02%) and `25` ppm is `"0.0025"`.
+///
+/// 1 ppm = 0.0001%, so 4 decimals are exact for every whole ppm value.
+pub fn fmt_ppm_pct(ppm: i64) -> String {
+    decimal(ppm < 0, ppm.unsigned_abs(), 10_000, 4)
+}
+
+/// A duration in nanoseconds shown as exact milliseconds with 6 decimals,
+/// e.g. `1_000_000` ns is `"1.000000"` and `1_500` ns is `"0.001500"`.
+pub fn fmt_ns_as_ms(ns: u64) -> String {
+    decimal(false, ns, 1_000_000, 6)
 }
 
 #[cfg(test)]
@@ -222,19 +241,38 @@ mod tests {
     fn display() {
         assert_eq!(fmt_price(Price(10_000_012)), "100000.12");
         assert_eq!(fmt_qty(Qty(1_234)), "0.01234");
-        assert_eq!(fmt_cash(Cash(123_400_000)), "+12.34");
-        assert_eq!(fmt_cash(Cash(-5_600_000)), "-0.56");
+        assert_eq!(fmt_cash(Cash(123_400_000)), "+12.3400000");
+        assert_eq!(fmt_cash(Cash(-5_600_000)), "-0.5600000");
+    }
+    #[test]
+    fn cash_display_is_exact_to_one_unit() {
+        assert_eq!(fmt_cash(Cash::ZERO), "+0.0000000");
+        assert_eq!(fmt_cash(Cash(1)), "+0.0000001");
+        assert_eq!(fmt_cash(Cash(-4)), "-0.0000004");
+        assert_eq!(fmt_cash(Cash(43_210)), "+0.0043210");
+        assert_eq!(fmt_cash(Cash(-12_345_678_901)), "-1234.5678901");
+    }
+    #[test]
+    fn ppm_as_percent_is_exact() {
+        assert_eq!(fmt_ppm_pct(200), "0.0200");
+        assert_eq!(fmt_ppm_pct(500), "0.0500");
+        assert_eq!(fmt_ppm_pct(25), "0.0025");
+        assert_eq!(fmt_ppm_pct(1), "0.0001");
+        assert_eq!(fmt_ppm_pct(-100), "-0.0100");
+        assert_eq!(fmt_ppm_pct(0), "0.0000");
+        assert_eq!(fmt_ppm_pct(1_000_000), "100.0000");
+    }
+    #[test]
+    fn nanos_as_millis_is_exact() {
+        assert_eq!(fmt_ns_as_ms(1_000_000), "1.000000");
+        assert_eq!(fmt_ns_as_ms(1_500), "0.001500");
+        assert_eq!(fmt_ns_as_ms(1), "0.000001");
+        assert_eq!(fmt_ns_as_ms(0), "0.000000");
     }
     #[test]
     fn side_helpers() {
         assert_eq!(Side::Buy.opposite(), Side::Sell);
         assert_eq!(Side::Sell.sign(), -1);
-    }
-    #[test]
-    fn sub_cent_cash_truncates_to_plus_zero() {
-        assert_eq!(fmt_cash(Cash::ZERO), "+0.00");
-        assert_eq!(fmt_cash(Cash(-4)), "+0.00");
-        assert_eq!(fmt_cash(Cash(99_999)), "+0.00");
     }
     #[test]
     fn price_arithmetic() {
