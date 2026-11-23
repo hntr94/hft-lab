@@ -23,7 +23,7 @@ struct Cli {
     /// Distance of each quote from the mid, in ticks.
     #[arg(long, default_value_t = AppConfig::default().half_spread_ticks)]
     half_spread_ticks: i64,
-    /// Quote shift per lot of position, in ticks.
+    /// Quote shift per quote_qty (one quote size) of position, in ticks.
     #[arg(long, default_value_t = AppConfig::default().skew_ticks)]
     skew_ticks: i64,
     /// Size of each quote, in lots.
