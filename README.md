@@ -205,6 +205,40 @@ For serious latency work later, a cheap Linux box or VM with pinned cores is the
 
 ---
 
+## Development
+
+**Prerequisites:** [rustup](https://rustup.rs). The pinned toolchain (stable, with clippy and rustfmt) installs automatically from `rust-toolchain.toml`.
+
+**Commands** (run from the repo root):
+
+| Target | What it does |
+|---|---|
+| `make check` | `cargo fmt --check`, clippy with `-D warnings`, then all tests |
+| `make test` | `cargo test --workspace` |
+| `make run` | `cargo run --release -p app --` (pass CLI flags after `--`) |
+| `make exercise-book` / `exercise-strategy` / `exercise-risk` | Run that crate's `tests/mine.rs`, including `#[ignore]`d tests |
+
+**Crate layout** (`crates/`):
+
+- `types`: `Price`, `Qty`, `Side`, `OrderId`, `Timestamp`, instrument constants and shared events.
+- `book`: the limit order book (owner-built).
+- `exchange`: matching engine, synthetic market, latency and fees.
+- `venue`: the `Venue` trait and `SimVenue`, the bot's only view of the exchange.
+- `strategy`: the `Strategy` trait and the market maker (owner-built).
+- `risk`: pre-trade checks (owner-built).
+- `app`: binary with CLI, wiring and the run summary.
+
+**Dependency graph** (crates depend only downward):
+
+```
+          app
+   ┌───┬──┼────┬──────┐
+strategy risk venue  exchange
+   │    │    │  └──────┤
+  book  │    │         │
+   └────┴────┴──types──┘
+```
+
 ## 7. Roadmap (draft)
 
 > The authoritative plan (phases, initiatives, decisions) lives in [docs/VISION.md](docs/VISION.md). This section is a quick overview.
