@@ -66,6 +66,12 @@ fn too_many_open_orders() {
         r.check(&place(Side::Buy, 10_000, 100), &ctx),
         Err(RiskViolation::MaxOpenOrders)
     );
+    // 3 open orders is below the limit of 4, so a fourth is allowed.
+    let ctx = RiskContext {
+        open_orders: 3,
+        ..base_ctx()
+    };
+    assert_eq!(r.check(&place(Side::Buy, 10_000, 100), &ctx), Ok(()));
 }
 
 #[test]
@@ -126,6 +132,8 @@ fn sell_position_limit() {
         r.check(&place(Side::Sell, 10_000, 200), &ctx),
         Err(RiskViolation::MaxPosition)
     );
+    // -600 - 300 - 100 = -1_000, exactly at the limit
+    assert_eq!(r.check(&place(Side::Sell, 10_000, 100), &ctx), Ok(()));
 }
 
 #[test]

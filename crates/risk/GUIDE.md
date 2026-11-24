@@ -114,7 +114,7 @@ Work through them in order. When all ten pass, you are done. The normal `make ch
 cargo run --release -p app -- --risk mine
 ```
 
-(The `--risk` flag arrives with the CLI work in a later task. Leave it off to use the stand-in.)
+(Leave the flag off to use the stand-in. `make run ARGS="--risk mine"` does the same thing. The other two components keep their stand-ins.)
 
 ## 8. Reading
 

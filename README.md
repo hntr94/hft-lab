@@ -215,7 +215,7 @@ For serious latency work later, a cheap Linux box or VM with pinned cores is the
 |---|---|
 | `make check` | `cargo fmt --check`, clippy with `-D warnings`, then all tests |
 | `make test` | `cargo test --workspace` |
-| `make run` | `cargo run --release -p app --` (pass CLI flags after `--`) |
+| `make run` | `cargo run --release -p app -- $(ARGS)` (pass CLI flags as `make run ARGS="--seed 7"`) |
 | `make exercise-book` / `exercise-strategy` / `exercise-risk` | Run that crate's `tests/mine.rs`, including `#[ignore]`d tests |
 
 **Crate layout** (`crates/`):

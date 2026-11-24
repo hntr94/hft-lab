@@ -75,7 +75,7 @@ Once the tests pass, run the app with your book instead of the stand-in:
 cargo run --release -p app -- --book mine
 ```
 
-(The `--book` flag arrives with the CLI work in a later task. Leave it off to use the stand-in.)
+(Leave the flag off to use the stand-in. `make run ARGS="--book mine"` does the same thing. The other two components keep their stand-ins.)
 
 ## 7. Reading
 

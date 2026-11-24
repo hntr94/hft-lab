@@ -140,22 +140,22 @@ hft-lab run summary
   venue:            sim (in-process) · BTC/USDT
   seed:             42
   simulated time:   1h 00m
-  latency:          1.000 ms each way
-  fees:             maker 0.020% / taker 0.050%
+  latency:          1.000000 ms each way
+  fees:             maker 0.0200% / taker 0.0500%
   orders sent:      12,345   (rejected by risk: 3)
   fills:            1,234    (buy 610 / sell 624 · maker 1,200 / taker 34)
   volume:           1.234 BTC
   final inventory:  +0.012 BTC
-  gross PnL:        +14.10 USDT (before fees)
-  fees paid:        -2.32 USDT
-  realized PnL:     +12.34 USDT (after fees)
-  unrealized PnL:   -0.56 USDT (marked at final mid)
-  total PnL:        +11.78 USDT
-  max drawdown:     -4.20 USDT
+  gross PnL:        +14.1012345 USDT (before fees)
+  fees paid:        -2.3245678 USDT
+  realized PnL:     +12.3366667 USDT (after fees)
+  unrealized PnL:   -0.5600000 USDT (marked at final mid)
+  total PnL:        +11.7766667 USDT
+  max drawdown:     -4.2000000 USDT
   halted:           no
 ```
 
-The venue, latency and fee lines are required, and PnL is shown both before and after fees. Other fields and formatting are the builder's call.
+The venue, latency and fee lines are required, and PnL is shown both before and after fees. Every amount is printed exactly, never rounded: USDT to 7 decimals (one cash unit, 0.0000001 USDT), BTC to 5 decimals (one lot), fees to 4 decimals of a percent (one ppm) and latency to the nanosecond. Other fields and formatting are the builder's call.
 
 ### 5.3 Testing
 

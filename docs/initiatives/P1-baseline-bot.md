@@ -60,29 +60,29 @@ Everything is single-threaded and simple: correct first, fast later. This become
 
 | # | Task | Owner | Depends on |
 |---|---|---|---|
-| 1.1 | Matching engine: limit, market and cancel orders; price-time priority; partial fills; emits ack/reject/fill/cancelled | [Claude] | P0 |
-| 1.2 | Matching engine tests, including property tests ("book never stays crossed", "quantity is conserved") | [Claude] | 1.1 |
-| 1.3 | Fee model: maker/taker as basis points, negative maker fee = rebate, integer math; per-fill fee on fill events | [Claude] | 1.1 |
-| 1.4 | Market data output: top of book plus depth snapshot after each change | [Claude] | 1.1 |
+| [x] 1.1 | Matching engine: limit, market and cancel orders; price-time priority; partial fills; emits ack/reject/fill/cancelled | [Claude] | P0 |
+| [x] 1.2 | Matching engine tests, including property tests ("book never stays crossed", "quantity is conserved") | [Claude] | 1.1 |
+| [x] 1.3 | Fee model: maker/taker as basis points, negative maker fee = rebate, integer math; per-fill fee on fill events | [Claude] | 1.1 |
+| [x] 1.4 | Market data output: top of book plus depth snapshot after each change | [Claude] | 1.1 |
 
 ### Stage 2: Simulation engine [Claude]
 
 | # | Task | Owner | Depends on |
 |---|---|---|---|
-| 1.5 | Event loop with sim clock and priority queue (deliver time, then sequence number) | [Claude] | P0 |
-| 1.6 | Latency model: configurable one-way delay applied to every message in both directions; optional seeded jitter | [Claude] | 1.5 |
-| 1.7 | Synthetic market: fair price random walk, background liquidity around fair price, takers arriving at random intervals with an informed fraction | [Claude] | 1.1, 1.5 |
-| 1.8 | Determinism test: same seed gives an identical event trace | [Claude] | 1.7 |
-| 1.9 | Latency tests: an in-flight taker beats a later cancel; delay 0 delivers in the same instant | [Claude] | 1.6 |
+| [x] 1.5 | Event loop with sim clock and priority queue (deliver time, then sequence number) | [Claude] | P0 |
+| [x] 1.6 | Latency model: configurable one-way delay applied to every message in both directions; optional seeded jitter | [Claude] | 1.5 |
+| [x] 1.7 | Synthetic market: fair price random walk, background liquidity around fair price, takers arriving at random intervals with an informed fraction | [Claude] | 1.1, 1.5 |
+| [x] 1.8 | Determinism test: same seed gives an identical event trace | [Claude] | 1.7 |
+| [x] 1.9 | Latency tests: an in-flight taker beats a later cancel; delay 0 delivers in the same instant | [Claude] | 1.6 |
 
 ### Stage 3: Bot interfaces + stand-ins [Claude]
 
 | # | Task | Owner | Depends on |
 |---|---|---|---|
-| 1.10 | `Venue` trait (submit, cancel, poll events) and `SimVenue` | [Claude] | 1.5 |
-| 1.11 | `OrderBook`, `Strategy` and `RiskCheck` interfaces, with stand-in implementations | [Claude] | P0 |
-| 1.12 | App wiring: CLI options (seed, duration, spread, skew, size, limits, latency, fees), PnL tracker, summary printout | [Claude] | 1.10, 1.11 |
-| 1.13 | **First end-to-end run** with stand-ins | [Claude] | 1.12 |
+| [x] 1.10 | `Venue` trait (submit, cancel, poll events) and `SimVenue` | [Claude] | 1.5 |
+| [x] 1.11 | `OrderBook`, `Strategy` and `RiskCheck` interfaces, with stand-in implementations | [Claude] | P0 |
+| [x] 1.12 | App wiring: CLI options (seed, duration, spread, skew, size, limits, latency, fees), PnL tracker, summary printout | [Claude] | 1.10, 1.11 |
+| [x] 1.13 | **First end-to-end run** with stand-ins | [Claude] | 1.12 |
 
 ### Stage 4: Owner-built components [You]
 
@@ -90,21 +90,21 @@ For each component, Claude first writes: the interface (already done in 1.11), s
 
 | # | Task | Owner | Depends on |
 |---|---|---|---|
-| 1.14 | Scaffolding for book: tests + guide | [Claude] | 1.11 |
-| 1.15 | **Order book**: apply snapshots/updates, best bid/ask, mid, spread, depth at level, using `BTreeMap` per side | [You] | 1.14 |
-| 1.16 | Scaffolding for strategy: tests + guide | [Claude] | 1.11 |
-| 1.17 | **Market maker**: quote around mid at a configurable spread; inventory skew; requote on mid change or fill; cancel stale quotes | [You] | 1.16, 1.15 |
-| 1.18 | Scaffolding for risk: tests + guide | [Claude] | 1.11 |
-| 1.19 | **Risk checks**: max position, max order size, price band around mid, max open orders; loss limit halts the bot | [You] | 1.18 |
-| 1.20 | Swap stand-ins for owner implementations; full run | [Together] | 1.15, 1.17, 1.19 |
+| [x] 1.14 | Scaffolding for book: tests + guide | [Claude] | 1.11 |
+| [ ] 1.15 | **Order book**: apply snapshots/updates, best bid/ask, mid, spread, depth at level, using `BTreeMap` per side | [You] | 1.14 |
+| [x] 1.16 | Scaffolding for strategy: tests + guide | [Claude] | 1.11 |
+| [ ] 1.17 | **Market maker**: quote around mid at a configurable spread; inventory skew; requote on mid change or fill; cancel stale quotes | [You] | 1.16, 1.15 |
+| [x] 1.18 | Scaffolding for risk: tests + guide | [Claude] | 1.11 |
+| [ ] 1.19 | **Risk checks**: max position, max order size, price band around mid, max open orders; loss limit halts the bot | [You] | 1.18 |
+| [ ] 1.20 | Swap stand-ins for owner implementations; full run | [Together] | 1.15, 1.17, 1.19 |
 
 ### Stage 5: Understanding the results [Together]
 
 | # | Task | Owner | Depends on |
 |---|---|---|---|
-| 1.21 | PnL accounting test on a hand-worked scenario, including fees and a rebate | [Together] | 1.12 |
-| 1.22 | Experiments: sweep spread, skew, latency (0 vs 1 ms vs 10 ms) and fees (zero vs default vs retail), then tabulate the results | [You] | 1.20 |
-| 1.23 | Write up findings: what makes the bot profitable or not, and why. Add a "Results" section to this doc | [You] | 1.22 |
+| [x] 1.21 | PnL accounting test on a hand-worked scenario, including fees and a rebate | [Together] | 1.12 |
+| [ ] 1.22 | Experiments: sweep spread, skew, latency (0 vs 1 ms vs 10 ms) and fees (zero vs default vs retail), then tabulate the results | [You] | 1.20 |
+| [ ] 1.23 | Write up findings: what makes the bot profitable or not, and why. Add a "Results" section to this doc | [You] | 1.22 |
 
 ## Pitfalls
 
@@ -116,7 +116,33 @@ For each component, Claude first writes: the interface (already done in 1.11), s
 
 ## Done when
 
-- [ ] `cargo run --release` completes one simulated hour and prints the summary, including venue, latency and fee lines, and PnL before and after fees.
+- [x] `cargo run --release` completes one simulated hour and prints the summary, including venue, latency and fee lines, and PnL before and after fees.
 - [ ] Book, strategy and risk are the owner's implementations, and all their tests pass.
 - [ ] Determinism, latency and PnL accounting tests pass; clippy is clean.
 - [ ] The experiment table exists, and the owner can explain each trend in it.
+
+## Results
+
+First end-to-end run with the stand-in book, strategy and risk (`make run`, seed 42, default options, 1 simulated hour):
+
+```
+hft-lab run summary
+  venue:            sim (in-process) · BTC/USDT
+  seed:             42
+  simulated time:   1h 00m
+  latency:          1.000000 ms each way
+  fees:             maker 0.0200% / taker 0.0500%
+  orders sent:      66,976   (rejected by risk: 16,327)
+  fills:            17,360   (buy 8,704 / sell 8,656 · maker 17,360 / taker 0)
+  volume:           12.92163 BTC
+  final inventory:  +0.00945 BTC
+  gross PnL:        +316.7931692 USDT (before fees)
+  fees paid:        -258.3217970 USDT
+  realized PnL:     +58.3313891 USDT (after fees)
+  unrealized PnL:   +0.1399831 USDT (marked at final mid)
+  total PnL:        +58.4713722 USDT
+  max drawdown:     -0.3395663 USDT
+  halted:           no
+```
+
+The experiment table and the write-up (tasks 1.22 and 1.23) are still to do.

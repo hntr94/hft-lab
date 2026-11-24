@@ -107,8 +107,8 @@ From the repo root:
 make exercise-strategy
 ```
 
-The nine tests in `crates/strategy/tests/mine.rs` start out failing with `not yet implemented: exercise: ...`.
-Work through them in order. When all nine pass, you are done. The normal `make check` skips them
+The eleven tests in `crates/strategy/tests/mine.rs` start out failing with `not yet implemented: exercise: ...`.
+Work through them in order. When all eleven pass, you are done. The normal `make check` skips them
 (they are marked `#[ignore]`), so it stays green while you work.
 
 ## 8. Switch the app to your strategy
@@ -117,7 +117,7 @@ Work through them in order. When all nine pass, you are done. The normal `make c
 cargo run --release -p app -- --strategy mine
 ```
 
-(The `--strategy` flag arrives with the CLI work in a later task. Leave it off to use the stand-in.)
+(Leave the flag off to use the stand-in. `make run ARGS="--strategy mine"` does the same thing. The other two components keep their stand-ins.)
 
 ## 9. Reading
 
